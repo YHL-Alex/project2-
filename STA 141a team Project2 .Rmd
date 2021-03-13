@@ -31,7 +31,7 @@ Coronavirus disease 2019 (COVID-19) is caused by a new coronavirus first identif
 
 First, let's look at the daily number of new cases in the US, China and globally since Jan 3, 2020.
 
-```{r message=FALSE, warning=FALSE}
+```{r message=FALSE, warning=FALSE, echo = FALSE}
 covid <- read_csv("https://covid19.who.int/WHO-COVID-19-global-data.csv")
 covid %>% group_by(Date_reported) %>%
   summarise(new_cases_global = sum(New_cases)) %>%
@@ -54,7 +54,7 @@ We can see that the number of new cases reaches a maximum around Jan 2021 and th
 
 Next, let's look at the daily number of deaths in the US, China and globally since Jan 3, 2020.
 
-```{r message=FALSE, warning=FALSE}
+```{r message=FALSE, warning=FALSE, echo = FALSE}
 covid %>% group_by(Date_reported) %>%
   summarise(n_deaths_global = sum(New_deaths)) %>%
   ggplot(aes(y=n_deaths_global, x=Date_reported)) +
@@ -76,7 +76,7 @@ We can see that the number of deaths reaches a maximum after Jan 2021. There is 
 
 Case-mortality rate is an important index quantifying how dangerous a pathogen is. The global case-mortality rate so far is 2.22%. We are going to calculate the case-mortality rate so far for each country and list the top 10 countries that has the highest case-mortality rate, and top 10 countries that has the lowest case-mortality rate.
 
-```{r}
+```{r message=FALSE, warning=FALSE, echo = FALSE}
 covid_motality_rate <- covid %>% filter(Date_reported=="2021-03-05") %>%
   mutate(rate = Cumulative_deaths / Cumulative_cases) %>%
   select(Country, rate, WHO_region, Cumulative_cases, Cumulative_deaths)
@@ -97,7 +97,7 @@ $$y = \beta_0 + \beta_1AFRO+\beta_2AMRO+\beta_3EMRO+\beta_4EURO+\beta_5SEARO+\be
 
 $y$ is the case-mortality rate, and there are six dummy variables for the six regions. Other region is chosen as the baseline group. 
 
-```{r}
+```{r message=FALSE, warning=FALSE, echo = FALSE}
 covid_motality_rate$WHO_region <- relevel(factor(covid_motality_rate$WHO_region), ref="Other")
 m <- aov(rate~WHO_region, covid_motality_rate)
 summary(m)
@@ -109,7 +109,7 @@ The ANOVA table shows that the F statistic is 2.9742 and the p-value is 0.00823.
 
 # Sensitivity analysis
 
-```{r message=FALSE, warning=FALSE}
+```{r message=FALSE, warning=FALSE, echo = FALSE}
 plot(m, which =1:2)
 covid_motality_rate[235,]
 ```
@@ -117,7 +117,7 @@ covid_motality_rate[235,]
 Based on the residual plot and QQ plot, we find that the 135th and 235th observation are outliers. Therefore, we remove it and refit the model.
 
 
-```{r}
+```{r message=FALSE, warning=FALSE, echo = FALSE}
 m <- aov(rate~WHO_region, covid_motality_rate[-c(135, 235),])
 summary(m)
 TukeyHSD(m)
@@ -131,6 +131,77 @@ In Exploratory Data Analysis, we showed the trend of number of new cases and dea
 
 We used an ANOVA model to compare the case-mortality rate for 7 regions. After removing 2 outliers, we concluded that there is a significant difference between case-mortality rate among the 7 regions. We used Tukey's confidence interval to conclude that West Pacific region has an significant lower case-mortality rate than the Eastern Mediterranean region. This implies that Eastern Mediterranean region suffered more from the pandemic than West Pacific region and may need more help if WHO decides to distribute resources to relief the pandemic.
 
+
+
+
+# Acknowledgement {-}
+
+
+
+# Reference {-}
+WHO COVID-19 Dashboard. Geneva: World Health Organization, 2020. Available online: https://covid19.who.int/
+
+
+
+# Session info {-}
+```
+covid <- read_csv("https://covid19.who.int/WHO-COVID-19-global-data.csv")
+covid %>% group_by(Date_reported) %>%
+  summarise(new_cases_global = sum(New_cases)) %>%
+  ggplot(aes(y=new_cases_global, x=Date_reported)) +
+  geom_line() + 
+  ggtitle("Number of new cases (global)")
+covid %>% group_by(Date_reported) %>% filter(Country=="United States of America") %>%
+  summarise(new_cases = sum(New_cases)) %>%
+  ggplot(aes(y=new_cases, x=Date_reported)) +
+  geom_line() + 
+  ggtitle("Number of new cases (US)")
+covid %>% group_by(Date_reported) %>% filter(Country=="China") %>%
+  summarise(new_cases = sum(New_cases)) %>%
+  ggplot(aes(y=new_cases, x=Date_reported)) +
+  geom_line() + 
+  ggtitle("Number of new cases (China)")
+  
+covid %>% group_by(Date_reported) %>%
+  summarise(n_deaths_global = sum(New_deaths)) %>%
+  ggplot(aes(y=n_deaths_global, x=Date_reported)) +
+  geom_line() + 
+  ggtitle("Number of deaths (global)")
+covid %>% group_by(Date_reported) %>% filter(Country=="United States of America") %>%
+  summarise(n_deaths = sum(New_deaths)) %>%
+  ggplot(aes(y=n_deaths, x=Date_reported)) +
+  geom_line() + 
+  ggtitle("Number of deaths (US)")
+covid %>% group_by(Date_reported) %>% filter(Country=="China") %>%
+  summarise(n_deaths = sum(New_deaths)) %>%
+  ggplot(aes(y=n_deaths, x=Date_reported)) +
+  geom_line() + 
+  ggtitle("Number of deaths (China)")
+
+covid_motality_rate <- covid %>% filter(Date_reported=="2021-03-05") %>%
+  mutate(rate = Cumulative_deaths / Cumulative_cases) %>%
+  select(Country, rate, WHO_region, Cumulative_cases, Cumulative_deaths)
+covid_motality_rate %>%
+  arrange(desc(rate)) %>%
+  head(10)
+covid_motality_rate %>%
+  filter(rate>0) %>%
+  arrange(rate) %>%
+  head(10)
+
+covid_motality_rate$WHO_region <- relevel(factor(covid_motality_rate$WHO_region), ref="Other")
+m <- aov(rate~WHO_region, covid_motality_rate)
+summary(m)
+TukeyHSD(m)
+
+plot(m, which =1:2)
+covid_motality_rate[235,]
+
+m <- aov(rate~WHO_region, covid_motality_rate[-c(135, 235),])
+summary(m)
+TukeyHSD(m)
+
+```
 
 
 
